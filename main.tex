@@ -1,3 +1,4 @@
+%\documentclass[sigconf, anonymous]{acmart}
 \documentclass[sigconf]{acmart}
 
 %%
@@ -20,8 +21,7 @@
 
 %% These commands are for a PROCEEDINGS abstract or paper.
 \acmConference[ACSAC '19]{ACSAC '19: }{Dec. 09--13, 2019}{San Juan, Puerto Rico}
-%%\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
-%%  June 03--05, 2018, Woodstock, NY}
+%%\acmBooktitle{ACSCAC '19: Annual Computer Security Applications Conference Dec. 09--13, 2019, San Juan, Puerto Rico}
 %%\acmPrice{15.00}
 %%\acmISBN{978-1-4503-9999-9/18/06}
 
@@ -145,11 +145,36 @@ The remainder of the paper is structured as follows. In Section \ref{sec:backgro
 
 In this section, we provide summaries of the critical technologies and techniques necessary for understanding the problem and our proposed solution.
 
+\subsection{Jamming Techniques}
+\label{sec:jamming}
+
+Jamming is simply the process of creating channel conditions which prevent RF transmission across the channel. Recently a host of techniques have emerged which provide novel methods of jamming. In this section we will briefly cover some of the most notable jamming attacks, including interleaving jamming. 
+
+The simplest jamming method is whole-channel jamming, also referred to as a constant jammer\cite{grover2014jamming}. The principle behind this attack being if the channel is flooded with powerful enough noise it is possible to force the DSCs to exhibit too much noise for the error correction encoding to recover from. This attack does tend to be power hungry making it a less than ideal attack. 
+
+Another attack which particularly targets OFDM has been shown by Clancy\cite{clancy2011efficient}. This is a pair of attacks which target the pilot signals of the transmission. By deliberately jamming these signals it has been shown that the channel equalization model can be sufficiently disrupted to cause packet loss. A second related attack is proposed by the same author. In this attack rather than jamming the Pilot channels the attacker attempts to drive them as close to zero energy as possible. This disrupts the channel with a high level of efficiency, up to 4dB signal-to-jamming ratio (SJR).
+
+For OFDM to function properly it is critical that the signals are synchronized in respect to time and frequency. To capitalize on this fact methods of jamming which disrupt this have been proposed\cite{mueller2013efficient, la2013phase}. In WiFi this synchronization occurs during the preamble earning these attacks the nickname of preamble attacks. Because these attacks do not need to spend energy jamming the entire message packet this provides an efficient method of attacking OFDM.
+
+The final jamming attack which we discuss is the one we are seeking to mitigate through our work. Vo-Huu et al. proposed a jamming method which targets the DSC of 802.11 based on the static nature of the interleaving mechanism which we further discuss in section \ref{sub:interleavingMech} \cite{vo2016interleaving}. It was noted that adjacent bits are guaranteed to be three sub-carriers apart from each other. So a jamming method which focused solely on jamming every third sub-carrier was developed and implemented. By targeting adjacent bits the attacker is able to overwhelm the corrective capabilities of the forward error correction coding. Through this method they were able to achieve 100\% packet loss at 1\% SJR. 
+
+\subsection{Anti-Jamming Techniques}
+\label{sec:anti_jamming}
+
+In this section, we present several existing methods of jamming mitigation which have been proposed.
+
+Pietro et al. have proposed an anti-jamming technique which focuses on ensuring successful broadcast of data across and entire connected network\cite{di2015freedom}. In this technique, probabilistic transfer patterns are used in conjunction with symmetric keys to ensure the propagation of broadcast packets through the entire network. This system does have the weakness that it requires pre-connection physical setup in the form of key-exchange. This makes this mitigation method less suitable for a dynamic networking environment such as WiFi.
+
+Direct Sequence Spread Spectrum (DSSS) has long been a method used for mitigating jamming. It relies on spreading the channel information over a much larger bandwidth than is necessary to deliver the data. In order to do this the sender and receiver need to have a shared secret spreading code. Liu et al. propose an extension of this technology which is even more resistant to jamming\cite{liu2010randomized}. Using a large set of spreading codes with a low correlation between the codes they are able to encode '1' using the same code resulting in a high calculable correlation at the receiver, while '0' is encoded using two distinct codes resulting in a much lower correlation. Again this mitigation technique requires the sharing of an initial set of secret data making it difficult to implement for WiFi.
+
+A separate jamming mitigation method has been proposed by Cassola et al.\cite{cassola2012efficient}. This scheme has the advantage that it does not rely on any shared secrets. It uses DSSS with a randomly generated spreading code. They show that given a sufficient amount of time this code can be determined based on reducing key entropy. However, to determine this key the end of the message must be possessed. This prevents a jammer from determining the key until it is too late and the packet has already been fully broadcast. 
+
 \subsection{802.11 Interleaving Mechanism}
+\label{sub:interleavingMech}
 
 IEEE 802.11 seeks to solve the problems of bursty errors and channel bias by using a two part static interleaver\cite{vo2016interleaving}. WiFi uses a 20MHz channel width which implements orthogonal frequency division multiplexing (OFDM). OFDM divides a channel into multiple narrow-band frequency sub-carriers which are each used to transmit a portion of the data within the entire channel. The goal of this interleaver is to spread bits across many sub-carrier frequencies. In 802.11 there are 52 OFDM sub-carriers each of which are 312.5 KHz wide\cite{kapp2002802}. Four of these are called pilot channels and are used during the equalization process by the receiver. This leaves 48 data sub-carriers (DSC) responsible for carrying packet data. WiFi's static interleaver spreads adjacent bits across DSC so bursty errors are easily able to be recovered through the forward-error coding scheme. 
 
-\begin{table}[h] 
+\begin{table}[ht] 
 \begin{tabular}{ccc}
 \textbf{Modulation Scheme} & \textit{bpsc} & \textit{m} \\ \hline
 BPSK                       & 1             & 48         \\
@@ -173,37 +198,13 @@ The second stage of interleaving in IEEE 802.11 is used to counter any bias in t
 $$P''= s \Bigl\lfloor \frac{P'}{s} \Bigr\rfloor + \Bigl(P' + m - \Bigl\lfloor 16 \frac{P'}{16} \Bigr\rfloor \Bigr)\: mod \: s$$
 where $s=max(b/2, 1)$, $b$ is the bits per sub-carrier, and $P''$ if the final bit index. Note that for $s=1$ (BPSK and QPSK) this stage has no impact. For QAM it can be thought of as a circular shift of each half of a particular DSC. 
 
-\subsection{Jamming Techniques}
-\label{sec:jamming}
-
-Jamming is simply the process of creating channel conditions which prevent RF transmission across the channel. Recently a host of techniques have emerged which provide novel methods of jamming. In this section we will briefly cover some of the most notable jamming attacks, including interleaving jamming. 
-
-The simplest jamming method is whole-channel jamming, also referred to as a constant jammer\cite{grover2014jamming}. The principle behind this attack being if the channel is flooded with powerful enough noise it is possible to force the DSCs to exhibit too much noise for the error correction encoding to recover from. This attack does tend to be power hungry making it a less than ideal attack. 
-
-Another attack which particularly targets OFDM has been shown by Clancy\cite{clancy2011efficient}. This is a pair of attacks which target the pilot signals of the transmission. By deliberately jamming these signals it has been shown that the channel equalization model can be sufficiently disrupted to cause packet loss. A second related attack is proposed by the same author. In this attack rather than jamming the Pilot channels the attacker attempts to drive them as close to zero energy as possible. This disrupts the channel with a high level of efficiency, up to 4dB signal-to-jamming ratio (SJR).
-
-For OFDM to function properly it is critical that the signals are synchronized in respect to time and frequency. To capitalize on this fact methods of jamming which disrupt this have been proposed\cite{mueller2013efficient, la2013phase}. In WiFi this synchronization occurs during the preamble earning these attacks the nickname of preamble attacks. Because these attacks do not need to spend energy jamming the entire message packet this provides an efficient method of attacking OFDM.
-
-The final jamming attack which we discuss is the one we are seeking to mitigate through our work. Vo-Huu et al. proposed a jamming method which targets the DSC of 802.11 based on the static nature of the interleaving mechanism\cite{vo2016interleaving}. It was noted that adjacent bits are guaranteed to be three sub-carriers apart from each other. So a jamming method which focused solely on jamming every third sub-carrier was developed and implemented. By targeting adjacent bits the attacker is able to overwhelm the corrective capabilities of the forward error correction coding. Through this method they were able to achieve 100\% packet loss at 1\% SJR. 
-
-\subsection{Anti-Jamming Techniques}
-\label{sec:anti_jamming}
-
-In this section, we present several existing methods of jamming mitigation which have been proposed.
-
-Pietro et al. have proposed an anti-jamming technique which focuses on ensuring successful broadcast of data across and entire connected network\cite{di2015freedom}. In this technique, probabilistic transfer patterns are used in conjunction with symmetric keys to ensure the propagation of broadcast packets through the entire network. This system does have the weakness that it requires pre-connection physical setup in the form of key-exchange. This makes this mitigation method less suitable for a dynamic networking environment such as WiFi.
-
-Direct Sequence Spread Spectrum (DSSS) has long been a method used for mitigating jamming. It relies on spreading the channel information over a much larger bandwidth than is necessary to deliver the data. In order to do this the sender and receiver need to have a shared secret spreading code. Liu et al. propose an extension of this technology which is even more resistant to jamming\cite{liu2010randomized}. Using a large set of spreading codes with a low correlation between the codes they are able to encode '1' using the same code resulting in a high calculable correlation at the receiver, while '0' is encoded using two distinct codes resulting in a much lower correlation. Again this mitigation technique requires the sharing of an initial set of secret data making it difficult to implement for WiFi.
-
-A separate jamming mitigation method has been proposed by Cassola et al.\cite{cassola2012efficient}. This scheme has the advantage that it does not rely on any shared secrets. It uses DSSS with a randomly generated spreading code. They show that given a sufficient amount of time this code can be determined based on reducing key entropy. However, to determine this key the end of the message must be possessed. This prevents a jammer from determining the key until it is too late and the packet has already been fully broadcast. 
-
 \subsection{Deterministic Random Bit Generators}
 
 Deterministic random bit generators (DRBG) are pseudo-random number generators which are considered sufficiently random for security purposes. We use DRGB to in order to provide a random sequence in our proposed solution as discussed in Section \ref{sec:interleaver_design}. The most common source of these is from the NIST SP 800-90a rev 1\cite{barker2015nist90a}. There are three main classes of DRBG: hash, block-cipher, and number theoretic. As the names imply each of these rely on a different underlying cryptographic structure. In the rest of this section we will focus on hash based DRBG (Table \ref{tbl:DRGB_Hash}) since this is the DRBG used in our testing. 
 
 \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \begin{tikzpicture}[x=1pt,y=1pt,yscale=-0.5,xscale=0.5]
 %uncomment if require: \path (0,579); %set diagram left start at 0, and has height of 579
@@ -316,7 +317,7 @@ When random data is requested the current value gets added to an internal counte
 
 By generating output bits in this way it is known that this is a deterministic process and because of the one-way function of hash algorithms the bits generated would be sufficiently hard to guess without knowledge of the system's state\cite{chang2006indifferentiable}. 
 
-\begin{table}[h]
+\begin{table}[ht]
 \begin{tabular}{c|ccc}
                                                                         & \textbf{SHA-1} & \textbf{SHA-256} & \textbf{SHA-512} \\ \hline
 \textbf{Security Strength}                                              & 128            & 256              & 256              \\
@@ -335,9 +336,9 @@ We have previously covered methods mitigating jamming attacks. However, in this 
 
 Most schemes of jamming resistance rely on the two parties holding a shared secret which they can use in a way which coordinates their efforts to circumvent the jammer's malicious efforts. However, in purely wireless systems this proves to be a circular dependency; it is difficult to establish a shared secret over a jammed channel, so the parties switch to using a jamming resistant protocol, but the parties then need to establish a shared secret for this to work. JRKE through UFH seeks to eliminate this redundancy by eliminating the need for the parties to hold a shared secret between them. 
 
-Uncoordinated frequency hopping is a method of avoiding jamming by randomly switching the channels which is being transmitted and listened on. As shown in figure \ref{fig:UFH_channels}Each time a message is transmitted there is a small but positive chance that the receiver is listening on the same channel (see Figure \ref{fig:UFH_rand_channels}). If this is the case then that packet of the message has been successfully received. However, because of the low probability of a packet being receiver at any given time it is necessary to resend the message many times to ensure with a high likely-hood that the receiver saw each packet of the message. By transmitting in this way it prevents the jammer from being able to jam a single channel and forces them to either engage in costly multi-channel jamming or switch attack methods. 
+Uncoordinated frequency hopping is a method of avoiding jamming by randomly switching the channels which is being transmitted and listened on. As shown in figure \ref{fig:UFH_rand_channels} each time a message is transmitted there is a small but positive chance that the receiver is listening on the same channel. If this is the case then that packet of the message has been successfully received. However, because of the low probability of a packet being receiver at any given time it is necessary to resend the message many times to ensure with a high likely-hood that the receiver saw each packet of the message. By transmitting in this way it prevents the jammer from being able to jam a single channel and forces them to either engage in costly multi-channel jamming or switch attack methods. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
 
     \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
@@ -450,7 +451,7 @@ Uncoordinated frequency hopping is a method of avoiding jamming by randomly swit
 
 On its own this method of UFH works to allow the transmission of data around a jammer. However, it does not prevent the attacker from inserting their data within valid transmissions from the sender. To this end a hash-link chain has been developed to allow JRKE over UFH to avoid an attacker from inserting malicious data into an otherwise valid packet. Each packet sent contains an $id$ which is used to identify the message sequence, a packet number used to identify the order of the packets since it is not guaranteed that the packets will arrive in order, a portion of the message data, and a hash of the next packet's message data (see Figure \ref{fig:UFH_hash}). By linking the message fragments in this way it is possible to ensure the packets which are present in this chain are the packets that are intended to be there.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
 
     \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
@@ -553,14 +554,14 @@ In this section, we describe our suggested approach to mitigating interleaver ta
 
 The rest of this section will be organized as follows. We will first discuss the additional steps required to establish a connection in section \ref{sub:setup}. In section \ref{sub:interleavingAlg} we will then discuss the modified interleaving algorithm, with section \ref{sub:deinterleave} discussing the de-interleaving mechanism. Finally, we perform an analytic analysis of Jelly interleaving in section \ref{sub:analyticAnalysis}.
 
-\subsection{Modified Initial Connection Setup}
+\subsection{Modified Connection Setup}
 \label{sub:setup}
 
 IEEE 802.11 specifies a specific handshake used to establish a secure connection between the transmitter and receiver. In order to do this it sends packets over the air using the default interleaver\cite{cooklev2004wireless}. This means these packets are also subjected to interleaver targeted jamming. Because of this a jammer could feasibly prevent any connection from ever being established. In order to establish the modified interleaver we propose in section \ref{sub:interleavingAlg} a secret needs to be shared between the two parties. Using traditionally interleaved packets for this task is again insufficient as these packets are likely to be jammed by a sufficiently motivated attacker. 
 
 In order to send and generate a shared secret seed between the two we proposed the use of UFH, as shown in figure \ref{fig:connectionProcess}. When a connection attempt is detected UFH and a secure key-exchange protocol should be used in order generate a shared secret key (note that it is not necessary for forward secrecy as we are only prevent real-time attacks). Then continuing to use UFH for our packet delivery we use the secret key to securely share sufficiently random data in order act as a seed for our DRBG. Because there are cases where the receiver and transmitter may not trust each other we propose two methods of exchanging high-entropy data. The first can be used where both parties claim to be concerned with the reliability of the channel. In this case both parties generate a bit string long enough to sufficiently seed the DRBG and the two of these strings are concatenated an used to seed the DRBG. The second method is when only one party claims to care about the reliability of the channel. In this case that party generates the bit stream and it is used without additional modification. 
 
-After the shared secret random seed has been established between the two ends, the interleaving algorithm described below is use to generate a well conditioned and random interleaving pattern. Now that the interleaver is no long vulnerable to targeted jamming, the traditional WiFi handshake can occur without concern of this method of jamming. This process will increase the time required for setup however it is necessary to prevent targeted jamming because of the slower transfer rate of UFH\cite{strasser2008jamming}. 
+After the shared secret random seed has been established between the two ends, the interleaving algorithm described below is use to generate a well conditioned and random interleaving pattern. Now that the interleaver is no long vulnerable to targeted jamming, the traditional WiFi handshake can occur without concern of this method of jamming. This process will increase the time required for setup however it is necessary to prevent targeted jamming because of the slower transfer rate of UFH\cite{strasser2008jamming}.
 
 % Define block styles for flow chart
 \tikzstyle{decision} = [diamond, draw, fill=blue!20, 
@@ -573,7 +574,7 @@ After the shared secret random seed has been established between the two ends, t
 \tikzstyle{connectionRequest} = [draw, ellipse,fill=red!20, node distance=3cm,
     minimum height=2em]
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \begin{tikzpicture}[node distance = 2cm, auto]
         \node [connectionRequest] (init) {Connection Attempt};
         \node [block, below of=init] (ufh) {Use UFH to Shared Secret Key};
@@ -604,7 +605,7 @@ In this section we discuss our proposed modification to the IEEE 802.11 interlea
 
 In the DSC pattern generation stage, as shown in Algorithm \ref{alg:patterngen}, we seek to use the DRBG to establish DSC offsets used to perform the interleaving later. To this end we generate a random DSC offset from between 1 and the number of data sub-carriers, inclusive. We then check that this value was not already present in the DSC offset pattern. If it is not present then we append this value to the DSC offset pattern. If it was already present then we simply regenerate a new DSC offset. Once we have a unique offset value for each bit within the sub-carrier, we perform a Fisher-Yates shuffle over the pattern to generate the final pattern\cite{fisher1943statistical}. It is then necessary to check that pattern is well conditioned to be an interleaver. This is done by ensuring there are no two values in the pattern which are adjacent sub-carriers, so there is at-least a sub-carrier worth of buffer between bits within the same initial DSC. If the pattern is not well conditioned we attempt to generate another patter using the DRBG in its current state. This continues until we find a sufficiently conditioned pattern or the DRBG exceeds its reseed interval at which point we share a new random seed between the two parties and continue.
 
-\begin{algorithm}[H]
+\begin{algorithm}[ht]
 \caption{DSC Interleaver Pattern Generator Algorithm}
 \label{alg:patterngen}
 \begin{algorithmic}
@@ -639,7 +640,7 @@ In the DSC pattern generation stage, as shown in Algorithm \ref{alg:patterngen},
 
 Generating a DSC pattern only needs to be done once per connection. For improved security this pattern should time-out and be re-computed occasionally. After it has been established it can be used to perform the actual interleaving. We first divide the input stream into a 2D array of bits where each row represents a DSC and each column represents all the values at the particular index of each initial sub-carrier. Then the transformation performs a circular shift on each row where the shift distance is determined by the value in the corresponding position of the DSC pattern. This can be more linearly thought of as shifing each bit within each sub-carrier by the DSC pattern offset in the corresponding position, as we show in Algorithm \ref{alg:interleaving}. Because of the minimal computation requirements after initially generating the DSC pattern this algorithm has the potential to be implemented in hardware and operate at high speeds.
 
-\begin{algorithm}[H]
+\begin{algorithm}[ht]
 \caption{Bit Interleaver Algorithm}
 \label{alg:interleaving}
 \begin{algorithmic}
@@ -660,12 +661,14 @@ Generating a DSC pattern only needs to be done once per connection. For improved
 \end{algorithmic}
 \end{algorithm}
 
+
+
 \subsection{De-Interleaving}
-\label{sub:deinterleaving}
+\label{sub:deinterleave}
 
 Our interleaving algorithm shifts the bit in each position by a certain value, so we are able to re-establish the original bit stream by pulling each bit from its final location. We show this in Algorithm \ref{alg:deinterleaving}.
 
-\begin{algorithm}[H]
+\begin{algorithm}[ht]
 \caption{Bit De-Interleaver Algorithm}
 \label{alg:deinterleaving}
 \begin{algorithmic}
@@ -686,6 +689,7 @@ Our interleaving algorithm shifts the bit in each position by a certain value, s
 \end{algorithmic}
 \end{algorithm}
 
+
 \subsection{Analytic Analysis of Interleaving Patterns}
 \label{sub:analyticAnalysis}
 
@@ -704,21 +708,22 @@ Note that this is a strict lower bound on the number of possible combinations. U
 \section{Testing Method}
 \label{sec:testing}
 
-For testing our modified interleaving mechanism we sought to stay close to the testing procedure of the initial attack paper by Vo-Huu et al. in order to obtain consistent results\cite{vo2016interleaving}. To this end we obtained the source code used by the attack paper to generate the jamming signal on a HackRF. In this section, we discuss our testing procedure.
+For testing our modified interleaving mechanism we sought to stay close to the testing procedure of the initial attack paper by Vo-Huu et al. in order to obtain consistent results\cite{vo2016interleaving}. To this end we obtained the source code used by the attack paper to generate the jamming signal on a HackRF\cite{vo2016software}. In this section, we discuss our testing procedure.
 
-For our transmitter and receiver we used software defined radio as the interleaver is most often a hardware component and we needed to modify it. We elected to use the \textit{gr-ieee802-11} implementation for GNU-Radio because of its open source nature and relatively high speeds. We modified the underlying implementation to use our design with a fixed specified shared secret. We did not elect to perform the secret sharing and initialization because it is beyond the scope of this paper and there are other publications which have already explored that topic. 
+For our transmitter and receiver we used software defined radio as the interleaver is most often a hardware component and we needed to modify it. We elected to use the \textit{gr-ieee802-11} implementation for GNU-Radio because of its open source nature and relatively high speeds\cite{gr_ieee802}. We modified the underlying implementation to use our design with a fixed specified shared secret. We did not elect to perform the secret sharing and initialization because it is beyond the scope of this paper and there are other publications which have already explored that topic. 
 
 Our implementation for testing used a SHA-256 hash-based DRBG as our deterministic source of randomness. Over the course of testing we tested across 30 different initial seeds which were randomly generated using \textit{/dev/random} as our source of entropy. 
 
 A HackRF with the provided attack firmware was used as our jamming device, with SDRs for both our transmitter and reciever. All three of these devices were linked through SMA and a T-junction as shown in Figure \ref{fig:test_setup} and \ref{fig:test_setup_diagram}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
-    \caption{Testing Setup}
+    \includegraphics[width=\linewidth]{test_bench.jpg}
+    \caption{Test Bench Setup}
     \label{fig:test_setup}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
 
     \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
@@ -776,7 +781,7 @@ In this section we evaluate our modified interleaving algorithm against interlea
 
 We first test our Jelly interleaver and the 802.11 interleaver against Vo-Huu et al. interleaving jamming technique. For this set of tests we jammed on DSCs 0, 3, 6, 9, 12, 15, and 18 since this is the largest subset of DSCs targetted by the attack paper. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     
     \begin{tikzpicture}
@@ -809,13 +814,13 @@ We first test our Jelly interleaver and the 802.11 interleaver against Vo-Huu et
     \label{fig:interleaving_jamming}
 \end{figure}
 
-In Figure \ref{fig:interleaving_jamming}, we show the results for this test which clearly illustrate the impact which our re-designed interleaver is able to have. Our interleaver increase the channel power requirement by as much as 4.5 dB in order to achieve the same jamming level (~0.6 PER). This data shows that our modified design is effective at migitating the interleaver targeted jamming attack. 
+In Figure \ref{fig:interleaving_jamming}, we show the results for this test which clearly illustrate the impact which our re-designed interleaver is able to have. Our interleaver increase the channel power requirement by as much as 4.5 dB in order to achieve the same jamming level (~0.6 PER). This data shows that our modified design is effective at mitigating the interleaver targeted jamming attack. 
 
 \subsection{Other Jamming Techniques}
 
 While our results are extremely positive for mitigating interleaving jamming this is not the only jamming method present in the wild. In this section we test our interleaver against two other types of jamming in-order to verify our design does not create any further vulnerabilities against these common attacks.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     
     \begin{tikzpicture}
@@ -853,7 +858,7 @@ While our results are extremely positive for mitigating interleaving jamming thi
     \label{fig:interleaver_v_whole}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     
     \begin{tikzpicture}
@@ -888,7 +893,7 @@ While our results are extremely positive for mitigating interleaving jamming thi
 
 The first jamming method we test against is whole channel-jamming. In Figure \ref{fig:interleaver_v_whole}, we show our interleaver modifications work so well against the attack that we reduce the power efficiency of the attack below the power efficiency of whole-channel jamming. This shows we have completely negated this jamming attack vector. Through comparing the results of our modified design against whole-channel jamming with the results of 802.11 jammer against the same attack we show, in Figure \ref{fig:whole_channel_jamming}, our interleaver does not inherently exacerbate this attack vector as it performs as well against this common jamming technique. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     
     \begin{tikzpicture}
